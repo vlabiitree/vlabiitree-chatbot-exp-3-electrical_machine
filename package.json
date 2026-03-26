@@ -1,0 +1,50 @@
+{
+    "name": "vlab-chatbot",
+    "version": "0.1.0",
+    "private": true,
+    "engines": {
+        "node": "22.x"
+    },
+    "scripts": {
+        "dev": "next dev --webpack",
+        "build": "next build --webpack",
+        "start": "next start",
+        "lint": "eslint",
+        "seed": "tsx ./scripts/loadDB.ts",
+        "sync:images": "tsx ./scripts/syncImages.ts"
+    },
+    "dependencies": {
+        "@datastax/astra-db-ts": "^2.1.2",
+        "@google/generative-ai": "^0.24.1",
+        "@langchain/google-genai": "^1.0.0",
+        "@langchain/textsplitters": "^1.0.0",
+        "@xenova/transformers": "^2.17.2",
+        "docx-parser": "^0.2.1",
+        "dotenv": "^17.2.3",
+        "langchain": "^1.0.3",
+        "mammoth": "^1.11.0",
+        "next": "16.1.1",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
+        "react-markdown": "^10.1.0",
+        "remark-gfm": "^4.0.1"
+    },
+    "devDependencies": {
+        "@netlify/plugin-nextjs": "^5.15.8",
+        "@tailwindcss/postcss": "^4",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "baseline-browser-mapping": "^2.9.19",
+        "eslint": "^9",
+        "eslint-config-next": "16.1.1",
+        "tailwindcss": "^4",
+        "tsx": "^4.20.6",
+        "typescript": "^5"
+    },
+    "overrides": {
+        "@xenova/transformers": {
+            "sharp": "^0.33.4"
+        }
+    }
+}
