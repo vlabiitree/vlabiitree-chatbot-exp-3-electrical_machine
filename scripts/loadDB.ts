@@ -14,31 +14,43 @@ import { DOC_SECTIONS, DocSectionConfig } from "../config/docSections";
 // --------------------
 (() => {
   const cwd = process.cwd();
-  const candidates = [
+  const primaryCandidates = Array.from(new Set([
+    path.resolve(cwd, ".env.local"),
+    path.resolve(__dirname, "../.env.local"),
+  ]));
+  const secondaryCandidates = Array.from(new Set([
     path.resolve(cwd, ".env"),
     path.resolve(__dirname, "../.env"),
     path.resolve(cwd, "vlab-chatbot/.env"),
     path.resolve(cwd, "vlab-chatbot-exp2/.env"),
-  ];
+  ]));
 
-  let loadedFrom: string | null = null;
-  for (const p of candidates) {
+  const loadedFrom: string[] = [];
+  for (const p of primaryCandidates) {
     try {
       const res = loadEnv({ path: p });
       if (!res.error) {
-        loadedFrom = p;
-        break;
+        loadedFrom.push(p);
       }
     } catch {}
   }
 
-  if (!loadedFrom) {
-    const res = loadEnv();
-    if (!res.error) loadedFrom = ".env (default lookup)";
+  for (const p of secondaryCandidates) {
+    try {
+      const res = loadEnv({ path: p });
+      if (!res.error) {
+        loadedFrom.push(p);
+      }
+    } catch {}
   }
 
-  if (!loadedFrom) console.warn("Warning: no .env file loaded; expecting env vars to be set.");
-  else console.log(`Loaded env from: ${loadedFrom}`);
+  if (!loadedFrom.length) {
+    const res = loadEnv();
+    if (!res.error) loadedFrom.push(".env (default lookup)");
+  }
+
+  if (!loadedFrom.length) console.warn("Warning: no .env file loaded; expecting env vars to be set.");
+  else console.log(`Loaded env from: ${loadedFrom.join(", ")}`);
 })();
 
 const {
@@ -241,12 +253,39 @@ const readDocxFile = async (filePath: string): Promise<string> => {
 
 function extractExperimentName(text: string): string | null {
   const t = normalize(text);
-  const m1 = t.match(/Name of the experiment\s*(?:is)?\s*:\s*\n([^\n]+)\n?/i);
-  if (m1?.[1]) return m1[1].trim();
-  const m2 = t.match(/Experiment name\s*:\s*\n?([^\n]+)\n?/i);
-  if (m2?.[1]) return m2[1].trim();
-  const m3 = t.match(/Welcome to the experiment\s*[“"](.*?)[”"]/i);
-  if (m3?.[1]) return m3[1].trim();
+
+  const normalizeName = (value: string): string | null => {
+    const cleaned = normalize(value || "")
+      .replace(/^[\s"'“”]+|[\s"'“”]+$/g, "")
+      .replace(/^the\s+/i, "")
+      .replace(/\s*\.\s*$/, "")
+      .trim();
+    if (!cleaned) return null;
+    const generic = cleaned.toLowerCase();
+    if (generic === "this experiment" || generic === "the experiment" || generic === "current experiment") {
+      return null;
+    }
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  };
+
+  const explicitPatterns = [
+    /name of the experiment\s*(?:is)?\s*[:\-]\s*([^\n.]+)/i,
+    /experiment name\s*[:\-]\s*([^\n.]+)/i,
+    /welcome to (?:the )?experiment\s*["“]?([^"”\n.]+)["”]?/i,
+  ];
+  for (const pattern of explicitPatterns) {
+    const hit = t.match(pattern);
+    if (!hit?.[1]) continue;
+    const name = normalizeName(hit[1]);
+    if (name) return name;
+  }
+
+  const aimBased = t.match(/\bto study\s+([^\n.]+?)(?:,\s*and\s+plot[\s\S]*?)?(?:\.|$)/i);
+  if (aimBased?.[1]) {
+    const name = normalizeName(aimBased[1]);
+    if (name) return name;
+  }
+
   return null;
 }
 
@@ -458,11 +497,9 @@ function extractAssessmentAnswerOnly(block: string): string | null {
     src.match(/\bcorrect\s*answer\s*:\s*(.+)$/i) || src.match(/\banswer\s*:\s*(.+)$/i);
   if (!ansMatch?.[1]) return null;
 
-  let ans = ansMatch[1].trim();
-  const explIdx = ans.search(/(?:because|explanation|reason)\b/i);
-  if (explIdx > 0) ans = ans.slice(0, explIdx).trim();
+  const ans = ansMatch[1].trim();
 
-  const mLetter = ans.match(/^\(?\s*([a-d])\s*\)?\s*[).:-]?\s*(.*)$/i);
+  const mLetter = ans.match(/^\(?\s*([a-d])\s*\)?\s*[).:-]\s*(.*)$/i);
   const letter = mLetter?.[1] ? String(mLetter[1]).toLowerCase() : null;
 
   if (letter && options[letter]) return options[letter];
@@ -470,7 +507,7 @@ function extractAssessmentAnswerOnly(block: string): string | null {
   const rest = (mLetter?.[2] || ans).trim();
   if (!rest) return letter ? letter.toUpperCase() : null;
 
-  const cleaned = rest.replace(/^\(?\s*[a-d]\s*\)?\s*[).:-]?\s*/i, "").trim();
+  const cleaned = rest.replace(/^\(?\s*[a-d]\s*\)?\s*[).:-]\s*/i, "").trim();
   return cleaned || rest;
 }
 

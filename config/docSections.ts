@@ -119,10 +119,13 @@ export const DOC_SECTIONS: DocSectionConfig[] = [
       "doc/03-pre-post-test.docx",
       "doc/pre-post-test.docx",
       "doc/pretest-posttest.docx",
+      "doc/pretest_posttest.docx",
       "docs/03-pre-post-test.docx",
       "docs/pre-post-test.docx",
       "docs/pretest-posttest.docx",
+      "docs/pretest_posttest.docx",
       "PrePostTest.docx",
+      "pretest_posttest.docx",
     ],
   },
   {

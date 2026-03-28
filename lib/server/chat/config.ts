@@ -40,9 +40,9 @@ const DEFAULTS = {
   searchContextDocs: 4,
   searchPerSectionLimit: 6,
   cacheMaxEntries: 400,
-  retrievalCacheTtlMs: 60_000,
+  retrievalCacheTtlMs: 15_000,
   embeddingCacheTtlMs: 5 * 60_000,
-  responseCacheTtlMs: 45_000,
+  responseCacheTtlMs: 10_000,
   rateLimitWindowMs: 60_000,
   rateLimitMaxRequests: 30,
 } as const;
